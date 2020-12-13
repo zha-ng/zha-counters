@@ -1,0 +1,14 @@
+{
+  "domain": "ezsp_counters",
+  "name": "EZSP Counters",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/ezsp_counters",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": ["zha"],
+  "codeowners": [
+    "@Adminiuga"
+  ]
+}
