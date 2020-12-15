@@ -1,5 +1,6 @@
 """Config flow for EZSP Counters integration."""
 import logging
+import uuid
 
 from homeassistant import config_entries, core, exceptions
 from homeassistant.components.zha.core.const import (
@@ -8,12 +9,12 @@ from homeassistant.components.zha.core.const import (
     RadioType,
 )
 
-from .const import CONF_COUNTERS_ID, DOMAIN
+from .const import CONF_COUNTERS_ID, CONF_URL_ID, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def validate_input(hass: core.HomeAssistant):
+async def validate_input(hass: core.HomeAssistant) -> None:
     """Validate the user input allows us to connect."""
 
     # If your PyPI package is not built with async, pass your methods
@@ -39,9 +40,6 @@ async def validate_input(hass: core.HomeAssistant):
         _LOGGER.error("EZSP radio does not have counters, needs an update?")
         raise NoZhaIntegration from exc
 
-    # Return info that you want to store in the config entry.
-    return {"title": "EZSP Counters"}
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EZSP Counters."""
@@ -58,14 +56,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         try:
-            info = await validate_input(self.hass)
+            await validate_input(self.hass)
         except NoZhaIntegration:
             errors["base"] = "cannot_connect"
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            return self.async_create_entry(title=info["title"], data={})
+            return self.async_create_entry(
+                title="EZSP Counters", data={CONF_URL_ID: uuid.uuid4()}
+            )
 
         return self.async_abort(reason="No EZSP radio type")
 
