@@ -64,7 +64,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors["base"] = "unknown"
         else:
             return self.async_create_entry(
-                title="EZSP Counters", data={CONF_URL_ID: uuid.uuid4()}
+                title="EZSP Counters", data={CONF_URL_ID: str(uuid.uuid4())}
             )
 
         return self.async_abort(reason="No EZSP radio type")

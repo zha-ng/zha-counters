@@ -2,18 +2,21 @@
 import asyncio
 import logging
 
-import voluptuous as vol
-
+from aiohttp import web
+from bellows.zigbee import state as app_state
+from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.zha.core.const import DATA_ZHA, DATA_ZHA_GATEWAY
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
+from homeassistant.const import HTTP_INTERNAL_SERVER_ERROR
 from homeassistant.core import HomeAssistant
+import voluptuous as vol
 
 from .config_flow import NoZhaIntegration, validate_input
-from .const import CONF_COUNTERS_ID, DOMAIN
+from .const import CONF_COUNTERS_ID, CONF_URL_ID, DOMAIN
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
-
+URL_COUNTERS_ID = "/api/" + DOMAIN + "/{counters_id}"
 
 PLATFORMS = ["sensor"]
 
@@ -51,6 +54,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_forward_entry_setup(entry, component)
         )
 
+    hass.http.register_view(CountersWebView(counters, entry.data[CONF_URL_ID]))
+
     return True
 
 
@@ -68,3 +73,36 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+class CountersWebView(HomeAssistantView):
+    """Expose counters via http endpoint."""
+
+    url = URL_COUNTERS_ID
+    name = f"api:{DOMAIN}"
+    requires_auth = False
+    cors_allowed = True
+
+    def __init__(self, counters: app_state.Counters, url_id: str) -> None:
+        """Initialize instance."""
+        self._counters = counters
+        self._counters_id: str = url_id
+
+    async def get(self, request: web.Request, counters_id: str) -> web.Response:
+        """Process get request."""
+
+        if counters_id != self._counters_id:
+            return web.Response(status=HTTP_INTERNAL_SERVER_ERROR)
+
+        resp = {
+            self._counters.name: [
+                {
+                    "counter": counter.name,
+                    "value": counter.value,
+                    "resets": counter.reset_count,
+                }
+                for counter in self._counters
+            ]
+        }
+
+        return self.json(resp)
