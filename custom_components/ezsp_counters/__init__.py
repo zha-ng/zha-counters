@@ -102,15 +102,14 @@ class CountersWebView(HomeAssistantView):
         if counters_id != self._counters_id:
             return web.Response(status=HTTP_INTERNAL_SERVER_ERROR)
 
-        resp = {
-            self._counters.name: [
-                {
-                    "counter": counter.name,
-                    "value": counter.value,
-                    "resets": counter.reset_count,
-                }
-                for counter in self._counters
-            ]
-        }
+        resp = [
+            {
+                "collection": self._counters.name,
+                "counter": counter.name,
+                "value": counter.value,
+                "resets": counter.reset_count,
+            }
+            for counter in self._counters
+        ]
 
         return self.json(resp)
