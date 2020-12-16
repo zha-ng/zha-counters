@@ -11,8 +11,14 @@ from homeassistant.const import HTTP_INTERNAL_SERVER_ERROR
 from homeassistant.core import HomeAssistant
 import voluptuous as vol
 
-from .config_flow import NoZhaIntegration, validate_input
-from .const import CONF_COUNTERS_ID, CONF_URL_ID, DOMAIN
+from .config_flow import NoZhaIntegration, check_for_ezsp_zha
+from .const import (
+    CONF_COUNTERS_ID,
+    CONF_ENABLE_ENTITIES,
+    CONF_ENABLE_HTTP,
+    CONF_URL_ID,
+    DOMAIN,
+)
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
@@ -30,7 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up EZSP Counters from a config entry."""
 
     try:
-        await validate_input(hass)
+        await check_for_ezsp_zha(hass)
     except NoZhaIntegration:
         _LOGGER.error("No Zha integration or EZSP radio found")
         return False
@@ -47,14 +53,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("EZSP radio does not have counters, needs an update?")
         return False
 
-    hass.data[DOMAIN] = {CONF_COUNTERS_ID: counters}
+    if entry.data[CONF_ENABLE_ENTITIES]:
+        hass.data[DOMAIN] = {CONF_COUNTERS_ID: counters}
 
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+        for component in PLATFORMS:
+            hass.async_create_task(
+                hass.config_entries.async_forward_entry_setup(entry, component)
+            )
 
-    hass.http.register_view(CountersWebView(counters, entry.data[CONF_URL_ID]))
+    if entry.data[CONF_ENABLE_HTTP]:
+        hass.http.register_view(CountersWebView(counters, entry.data[CONF_URL_ID]))
 
     return True
 
