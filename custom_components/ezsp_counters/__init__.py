@@ -1,4 +1,5 @@
 """The EZSP Counters integration."""
+
 import asyncio
 import logging
 
@@ -9,6 +10,7 @@ from homeassistant.components.zha.core.const import DATA_ZHA, DATA_ZHA_GATEWAY
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.const import HTTP_INTERNAL_SERVER_ERROR
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.network import get_url
 import voluptuous as vol
 
 from .config_flow import NoZhaIntegration, check_for_ezsp_zha
@@ -62,6 +64,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     if entry.data[CONF_ENABLE_HTTP]:
+        host = get_url(hass, prefer_external=False, allow_cloud=False)
+        uri = URL_COUNTERS_ID.format(counters_id=entry.data[CONF_URL_ID])
+        _LOGGER.info("registering %s%s url for counter view", host, uri)
         hass.http.register_view(CountersWebView(counters, entry.data[CONF_URL_ID]))
 
     return True
