@@ -1,5 +1,6 @@
 """Config flow for EZSP Counters integration."""
 import logging
+import uuid
 
 from homeassistant import config_entries, core, exceptions
 from homeassistant.components.zha.core.const import (
@@ -7,13 +8,27 @@ from homeassistant.components.zha.core.const import (
     DATA_ZHA_GATEWAY,
     RadioType,
 )
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 
-from .const import CONF_COUNTERS_ID, DOMAIN
+from .const import (
+    CONF_COUNTERS_ID,
+    CONF_ENABLE_ENTITIES,
+    CONF_ENABLE_HTTP,
+    CONF_URL_ID,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
+ENTRY_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ENABLE_ENTITIES, default=False): cv.boolean,
+        vol.Optional(CONF_ENABLE_HTTP, default=True): cv.boolean,
+    }
+)
 
 
-async def validate_input(hass: core.HomeAssistant):
+async def check_for_ezsp_zha(hass: core.HomeAssistant) -> None:
     """Validate the user input allows us to connect."""
 
     # If your PyPI package is not built with async, pass your methods
@@ -39,9 +54,6 @@ async def validate_input(hass: core.HomeAssistant):
         _LOGGER.error("EZSP radio does not have counters, needs an update?")
         raise NoZhaIntegration from exc
 
-    # Return info that you want to store in the config entry.
-    return {"title": "EZSP Counters"}
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EZSP Counters."""
@@ -55,19 +67,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries() or self.hass.data.get(DOMAIN):
             return self.async_abort(reason="single_instance_allowed")
 
-        errors = {}
-
         try:
-            info = await validate_input(self.hass)
+            await check_for_ezsp_zha(self.hass)
         except NoZhaIntegration:
-            errors["base"] = "cannot_connect"
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception")
-            errors["base"] = "unknown"
-        else:
-            return self.async_create_entry(title=info["title"], data={})
+            return self.async_abort(reason="no_ezsp")
 
-        return self.async_abort(reason="No EZSP radio type")
+        if user_input is None:
+            return self.async_show_form(step_id="user", data_schema=ENTRY_SCHEMA)
+
+        if any((user_input[CONF_ENABLE_ENTITIES], user_input[CONF_ENABLE_HTTP])):
+            return self.async_create_entry(
+                title="EZSP Counters",
+                data={
+                    **user_input,
+                    CONF_URL_ID: str(uuid.uuid4()),
+                },
+            )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=ENTRY_SCHEMA,
+            errors={"base": "must_pick_at_least_one"},
+        )
 
 
 class NoZhaIntegration(exceptions.HomeAssistantError):

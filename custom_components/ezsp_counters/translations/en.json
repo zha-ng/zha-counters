@@ -1,20 +1,20 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Device is already configured"
+            "already_configured": "Device is already configured",
+            "no_ezsp": "ZHA integration not configured or not an EZSP radio"
         },
         "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
+            "must_pick_at_least_one": "Enable at least one option",
             "unknown": "Unexpected error"
         },
         "step": {
             "user": {
                 "data": {
-                    "host": "Host",
-                    "password": "Password",
-                    "username": "Username"
-                }
+                    "enable_entities": "Counter Entities",
+                    "enable_http_endpoint": "HTTP endpoint"
+                },
+                "title": "Configure EZSP Counters"
             }
         }
     },

@@ -3,20 +3,20 @@
   "config": {
     "step": {
       "user": {
+        "title": "Configure EZSP Counters",
         "data": {
-          "host": "[%key:common::config_flow::data::host%]",
-          "username": "[%key:common::config_flow::data::username%]",
-          "password": "[%key:common::config_flow::data::password%]"
+          "enable_entities": "Counter Entities",
+          "enable_http_endpoint": "HTTP endpoint"
         }
       }
     },
     "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "must_pick_at_least_one": "Enable at least one option",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "no_ezsp": "ZHA integration not configured or not an EZSP radio"
     }
   }
 }
