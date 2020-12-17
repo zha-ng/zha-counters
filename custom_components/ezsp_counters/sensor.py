@@ -5,12 +5,11 @@ import logging
 from typing import Any, Callable, Dict, Optional
 
 from bellows.zigbee.state import Counter, Counters
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity
 from homeassistant.helpers.typing import HomeAssistantType
 
-from .const import CONF_COUNTERS_ID, DOMAIN
+from .const import DOMAIN
 
 ATTR_RESET_COUNT = "reset_count"
 _LOGGER = logging.getLogger(__name__)
@@ -22,8 +21,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Zigbee Home Automation sensor from config entry."""
 
-    counters: Counters = hass.data[DOMAIN][CONF_COUNTERS_ID]
-    entities = [EzspCounter(counter) for counter in counters]
+    counters_dict: Dict[str, Counters] = hass.data[DOMAIN].values()
+    entities = [
+        EzspCounter(counter) for counters in counters_dict for counter in counters
+    ]
     async_add_entities(entities)
 
 

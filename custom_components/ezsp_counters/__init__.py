@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Dict
 
 from aiohttp import web
 from bellows.zigbee import state as app_state
@@ -14,13 +15,7 @@ from homeassistant.helpers.network import get_url
 import voluptuous as vol
 
 from .config_flow import NoZhaIntegration, check_for_ezsp_zha
-from .const import (
-    CONF_COUNTERS_ID,
-    CONF_ENABLE_ENTITIES,
-    CONF_ENABLE_HTTP,
-    CONF_URL_ID,
-    DOMAIN,
-)
+from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
@@ -50,13 +45,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         state = getattr(zha_gw.application_controller, "state")
-        counters = state.counters[CONF_COUNTERS_ID]
     except (KeyError, AttributeError):
         _LOGGER.error("EZSP radio does not have counters, needs an update?")
         return False
 
     if entry.data[CONF_ENABLE_ENTITIES]:
-        hass.data[DOMAIN] = {CONF_COUNTERS_ID: counters}
+        hass.data[DOMAIN] = state.counters
 
         for component in PLATFORMS:
             hass.async_create_task(
@@ -67,7 +61,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         host = get_url(hass, prefer_external=False, allow_cloud=False)
         uri = URL_COUNTERS_ID.format(counters_id=entry.data[CONF_URL_ID])
         _LOGGER.info("registering %s%s url for counter view", host, uri)
-        hass.http.register_view(CountersWebView(counters, entry.data[CONF_URL_ID]))
+        hass.http.register_view(
+            CountersWebView(state.counters, entry.data[CONF_URL_ID])
+        )
 
     return True
 
@@ -98,7 +94,7 @@ class CountersWebView(HomeAssistantView):
 
     def __init__(self, counters: app_state.Counters, url_id: str) -> None:
         """Initialize instance."""
-        self._counters = counters
+        self._counters: Dict[str, app_state.Counters] = counters
         self._counters_id: str = url_id
 
     async def get(self, request: web.Request, counters_id: str) -> web.Response:
@@ -109,12 +105,13 @@ class CountersWebView(HomeAssistantView):
 
         resp = [
             {
-                "collection": self._counters.name,
+                "collection": counters.name,
                 "counter": counter.name,
                 "value": counter.value,
                 "resets": counter.reset_count,
             }
-            for counter in self._counters
+            for counters in self._counters.values()
+            for counter in counters
         ]
 
         return self.json(resp)
