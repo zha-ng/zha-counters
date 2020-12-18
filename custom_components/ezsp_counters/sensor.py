@@ -11,6 +11,7 @@ from homeassistant.helpers.typing import HomeAssistantType
 
 from .const import DOMAIN
 
+ATTR_COLLECTION = "collection_name"
 ATTR_RESET_COUNT = "reset_count"
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=20)
@@ -23,7 +24,9 @@ async def async_setup_entry(
 
     counters_dict: Dict[str, Counters] = hass.data[DOMAIN].values()
     entities = [
-        EzspCounter(counter) for counters in counters_dict for counter in counters
+        EzspCounter(counters.name, counter)
+        for counters in counters_dict
+        for counter in counters
     ]
     async_add_entities(entities)
 
@@ -31,14 +34,15 @@ async def async_setup_entry(
 class EzspCounter(entity.Entity):
     """EZSP Counter Entity."""
 
-    def __init__(self, counter: Counter) -> None:
+    def __init__(self, collection_name: str, counter: Counter) -> None:
         """Initialize entity."""
+        self._name = collection_name
         self._counter = counter
 
     @property
     def unique_id(self) -> Optional[str]:
         """Return Unique ID of the sensor."""
-        return self._counter.name
+        return f"{self._name}_{self._counter.name}"
 
     @property
     def state(self) -> Optional[int]:
@@ -48,7 +52,10 @@ class EzspCounter(entity.Entity):
     @property
     def state_attributes(self) -> Optional[Dict[str, Any]]:
         """State attributes."""
-        return {ATTR_RESET_COUNT: self._counter.reset_count}
+        return {
+            ATTR_COLLECTION: self._name,
+            ATTR_RESET_COUNT: self._counter.reset_count,
+        }
 
     @property
     def should_poll(self) -> bool:
