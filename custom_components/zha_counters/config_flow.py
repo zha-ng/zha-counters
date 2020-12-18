@@ -3,21 +3,11 @@ import logging
 import uuid
 
 from homeassistant import config_entries, core, exceptions
-from homeassistant.components.zha.core.const import (
-    DATA_ZHA,
-    DATA_ZHA_GATEWAY,
-    RadioType,
-)
+from homeassistant.components.zha.core.const import DATA_ZHA, DATA_ZHA_GATEWAY
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-from .const import (
-    CONF_COUNTERS_ID,
-    CONF_ENABLE_ENTITIES,
-    CONF_ENABLE_HTTP,
-    CONF_URL_ID,
-    DOMAIN,
-)
+from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 ENTRY_SCHEMA = vol.Schema(
@@ -42,17 +32,15 @@ async def check_for_ezsp_zha(hass: core.HomeAssistant) -> None:
         _LOGGER.error("No zha integration or gateway found")
         raise NoZhaIntegration
 
-    # check it is Ezsp radio
-    if zha_gw.radio_description != RadioType.ezsp.description:
-        _LOGGER.error("Only EZSP radio is supported")
-        raise NoZhaIntegration
-
     try:
-        state = getattr(zha_gw.application_controller, "state")
-        state.counters[CONF_COUNTERS_ID]
+        getattr(zha_gw.application_controller, "state")
     except (KeyError, AttributeError) as exc:
-        _LOGGER.error("EZSP radio does not have counters, needs an update?")
-        raise NoZhaIntegration from exc
+        _LOGGER.error(
+            "%s.%s does not have counters, an update is required?",
+            zha_gw.application_controller.__class__.__module__,
+            zha_gw.application_controller.__class__.__name__,
+        )
+        raise CountersNotSupported from exc
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -71,6 +59,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await check_for_ezsp_zha(self.hass)
         except NoZhaIntegration:
             return self.async_abort(reason="no_ezsp")
+        except CountersNotSupported:
+            return self.async_abort(reason="no_counters")
 
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=ENTRY_SCHEMA)
@@ -92,4 +82,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class NoZhaIntegration(exceptions.HomeAssistantError):
-    """Error to indicate we cannot connect."""
+    """Error to indicate no ZHA integration."""
+
+
+class CountersNotSupported(exceptions.HomeAssistantError):
+    """Error to indicate counters are not supported."""

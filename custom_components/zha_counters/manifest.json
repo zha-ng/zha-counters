@@ -1,8 +1,8 @@
 {
-  "domain": "ezsp_counters",
-  "name": "EZSP Counters",
+  "domain": "zha_counters",
+  "name": "ZHA Counters",
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/ezsp_counters",
+  "documentation": "https://www.home-assistant.io/integrations/zha_counters",
   "requirements": [],
   "ssdp": [],
   "zeroconf": [],

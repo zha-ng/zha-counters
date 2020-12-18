@@ -1,9 +1,9 @@
 {
-  "title": "EZSP Counters",
+  "title": "ZHA Counters",
   "config": {
     "step": {
       "user": {
-        "title": "Configure EZSP Counters",
+        "title": "Configure ZHA Counters",
         "data": {
           "enable_entities": "Counter Entities",
           "enable_http_endpoint": "HTTP endpoint"
@@ -16,7 +16,8 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
-      "no_ezsp": "ZHA integration not configured or not an EZSP radio"
+      "no_ezsp": "ZHA integration not configured or not an EZSP radio",
+      "no_counters": "Counters not supported. Do you need a ZHA update?"
     }
   }
 }

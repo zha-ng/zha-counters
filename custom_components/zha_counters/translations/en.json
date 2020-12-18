@@ -2,6 +2,7 @@
     "config": {
         "abort": {
             "already_configured": "Device is already configured",
+            "no_counters": "Counters not supported. Do you need an update?",
             "no_ezsp": "ZHA integration not configured or not an EZSP radio"
         },
         "error": {
@@ -14,9 +15,9 @@
                     "enable_entities": "Counter Entities",
                     "enable_http_endpoint": "HTTP endpoint"
                 },
-                "title": "Configure EZSP Counters"
+                "title": "Configure ZHA Counters"
             }
         }
     },
-    "title": "EZSP Counters"
+    "title": "ZHA Counters"
 }
