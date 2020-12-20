@@ -15,7 +15,7 @@ from homeassistant.helpers.network import get_url
 import voluptuous as vol
 
 from .config_flow import NoZhaIntegration, check_for_ezsp_zha
-from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN
+from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN, DATA_DEV_COUNTERS, DATA_COUNTERS
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
@@ -49,9 +49,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("EZSP radio does not have counters, needs an update?")
         return False
 
-    if entry.data[CONF_ENABLE_ENTITIES]:
-        hass.data[DOMAIN] = state.counters
+    hass.data[DOMAIN] = state
 
+    if entry.data[CONF_ENABLE_ENTITIES]:
         for component in PLATFORMS:
             hass.async_create_task(
                 hass.config_entries.async_forward_entry_setup(entry, component)
@@ -62,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         uri = URL_COUNTERS_ID.format(counters_id=entry.data[CONF_URL_ID])
         _LOGGER.info("registering %s%s url for counter view", host, uri)
         hass.http.register_view(
-            CountersWebView(state.counters, entry.data[CONF_URL_ID])
+            CountersWebView(state, entry.data[CONF_URL_ID])
         )
 
     return True
@@ -92,15 +92,15 @@ class CountersWebView(HomeAssistantView):
     requires_auth = False
     cors_allowed = True
 
-    def __init__(self, counters: app_state.Counters, url_id: str) -> None:
+    def __init__(self, state: app_state.State, url_id: str) -> None:
         """Initialize instance."""
-        self._counters: Dict[str, app_state.Counters] = counters
-        self._counters_id: str = url_id
+        self._state: app_state.State = state
+        self._url_id: str = url_id
 
     async def get(self, request: web.Request, counters_id: str) -> web.Response:
         """Process get request."""
 
-        if counters_id != self._counters_id:
+        if counters_id != self._url_id:
             return web.Response(status=HTTP_INTERNAL_SERVER_ERROR)
 
         resp = [
@@ -110,7 +110,7 @@ class CountersWebView(HomeAssistantView):
                 "value": counter.value,
                 "resets": counter.reset_count,
             }
-            for counters in self._counters.values()
+            for counters in self._state.counters.values()
             for counter in counters
         ]
 
