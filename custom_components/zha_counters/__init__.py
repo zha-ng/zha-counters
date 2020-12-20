@@ -5,7 +5,7 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from zigpy.application import state as app_state
+from zigpy import state as app_state
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.zha.core.const import DATA_ZHA, DATA_ZHA_GATEWAY
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
