@@ -15,7 +15,7 @@ from homeassistant.helpers.network import get_url
 import voluptuous as vol
 
 from .config_flow import NoZhaIntegration, check_for_ezsp_zha
-from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN, DATA_DEV_COUNTERS, DATA_COUNTERS
+from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
@@ -114,4 +114,18 @@ class CountersWebView(HomeAssistantView):
             for counter in counters
         ]
 
+        dev_counters = [
+            {
+                "collection": "devices",
+                "device_ieee": ieee,
+                "counter_ieee": f"{ieee}_{counter_types}_{counter.name}",
+                "counter": f"{counter_types}_{counter.name}",
+                "value": counter.value,
+                "resets": counter.reset_count,
+            }
+            for ieee, counter_types in self._state.device_counters.items()
+            for counter_types, counters in counter_types.items()
+            for counter in counters
+        ]
+        resp += dev_counters
         return self.json(resp)
