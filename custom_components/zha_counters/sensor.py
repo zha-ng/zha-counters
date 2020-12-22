@@ -4,12 +4,12 @@ from datetime import timedelta
 import logging
 from typing import Any, Callable, Dict, Optional
 
-from zigpy.state import Counter, Counters
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity
 from homeassistant.helpers.typing import HomeAssistantType
+from zigpy.state import Counter, CounterGroups
 
-from .const import DOMAIN, DATA_COUNTERS
+from .const import DOMAIN
 
 ATTR_COLLECTION = "collection_name"
 ATTR_RESET_COUNT = "reset_count"
@@ -22,7 +22,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Zigbee Home Automation sensor from config entry."""
 
-    counters_dict: Dict[str, Counters] = hass.data[DOMAIN][DATA_COUNTERS].values()
+    counters_dict: CounterGroups = hass.data[DOMAIN].counters.values()
     entities = [
         EzspCounter(counters.name, counter)
         for counters in counters_dict

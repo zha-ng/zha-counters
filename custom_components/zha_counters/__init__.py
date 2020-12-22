@@ -2,10 +2,8 @@
 
 import asyncio
 import logging
-from typing import Dict
 
 from aiohttp import web
-from zigpy import state as app_state
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.zha.core.const import DATA_ZHA, DATA_ZHA_GATEWAY
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
@@ -13,6 +11,7 @@ from homeassistant.const import HTTP_INTERNAL_SERVER_ERROR
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.network import get_url
 import voluptuous as vol
+from zigpy import state as app_state
 
 from .config_flow import NoZhaIntegration, check_for_ezsp_zha
 from .const import CONF_ENABLE_ENTITIES, CONF_ENABLE_HTTP, CONF_URL_ID, DOMAIN
@@ -61,9 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         host = get_url(hass, prefer_external=False, allow_cloud=False)
         uri = URL_COUNTERS_ID.format(counters_id=entry.data[CONF_URL_ID])
         _LOGGER.info("registering %s%s url for counter view", host, uri)
-        hass.http.register_view(
-            CountersWebView(state, entry.data[CONF_URL_ID])
-        )
+        hass.http.register_view(CountersWebView(state, entry.data[CONF_URL_ID]))
 
     return True
 
@@ -118,7 +115,6 @@ class CountersWebView(HomeAssistantView):
             {
                 "collection": "devices",
                 "device_ieee": ieee,
-                "counter_ieee": f"{ieee}_{counter_types}_{counter.name}",
                 "counter": f"{counter_types}_{counter.name}",
                 "value": counter.value,
                 "resets": counter.reset_count,
