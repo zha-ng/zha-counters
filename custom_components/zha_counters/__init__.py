@@ -89,6 +89,8 @@ class CountersWebView(HomeAssistantView):
     requires_auth = False
     cors_allowed = True
 
+    DEV_CNT_SCHEMA = ("message_type", "endpoint", "cluster")
+
     def __init__(self, state: app_state.State, url_id: str) -> None:
         """Initialize instance."""
         self._state: app_state.State = state
@@ -108,20 +110,48 @@ class CountersWebView(HomeAssistantView):
                 "resets": counter.reset_count,
             }
             for counters in self._state.counters.values()
-            for counter in counters
+            for counter in counters.counters()
         ]
 
-        dev_counters = [
-            {
-                "collection": "devices",
-                "device_ieee": ieee,
-                "counter": f"{counter_types}_{counter.name}",
-                "value": counter.value,
-                "resets": counter.reset_count,
-            }
-            for ieee, counter_types in self._state.device_counters.items()
-            for counter_types, counters in counter_types.items()
-            for counter in counters
-        ]
+        dev_counters = []
+        for dev_cnt_group in self._state.device_counters.values():
+            for msg_type in dev_cnt_group.groups():
+                dev_counters += [
+                    {
+                        "collection": "devices",
+                        "ieee": dev_cnt_group.name,
+                        "msg_type": msg_type.name,
+                        "counter": counter.name,
+                        "value": counter.value,
+                        "resets": counter.reset_count,
+                    }
+                    for counter in msg_type.counters()
+                ]
+                for endpoint in msg_type.groups():
+                    dev_counters += [
+                        {
+                            "collection": "devices",
+                            "device_ieee": dev_cnt_group.name,
+                            "endpoint": endpoint.name,
+                            "counter": counter.name,
+                            "value": counter.value,
+                            "resets": counter.reset_count,
+                        }
+                        for counter in endpoint.counters()
+                    ]
+                    for cluster in endpoint.groups():
+                        dev_counters += [
+                            {
+                                "collection": "devices",
+                                "device_ieee": dev_cnt_group.name,
+                                "endpoint": endpoint.name,
+                                "cluster": cluster.name,
+                                "counter": counter.name,
+                                "value": counter.value,
+                                "resets": counter.reset_count,
+                            }
+                            for counter in cluster.counters()
+                        ]
+
         resp += dev_counters
-        return self.json(resp)
+        return self.json(resp + dev_counters)
