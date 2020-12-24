@@ -33,7 +33,11 @@ Sample `telegraf.conf` input plugin configuration
 
   data_format = "json"
   tag_keys = [
-        "counter"
+        "counter",
+        "ieee",
+        "msg_type",
+        "endpoint",
+        "cluster"
   ]
   json_name_key = "collection"
 ```
