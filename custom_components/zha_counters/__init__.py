@@ -131,7 +131,8 @@ class CountersWebView(HomeAssistantView):
                     dev_counters += [
                         {
                             "collection": "devices",
-                            "device_ieee": dev_cnt_group.name,
+                            "msg_type": msg_type.name,
+                            "ieee": dev_cnt_group.name,
                             "endpoint": endpoint.name,
                             "counter": counter.name,
                             "value": counter.value,
@@ -143,7 +144,8 @@ class CountersWebView(HomeAssistantView):
                         dev_counters += [
                             {
                                 "collection": "devices",
-                                "device_ieee": dev_cnt_group.name,
+                                "ieee": dev_cnt_group.name,
+                                "msg_type": msg_type.name,
                                 "endpoint": endpoint.name,
                                 "cluster": cluster.name,
                                 "counter": counter.name,
